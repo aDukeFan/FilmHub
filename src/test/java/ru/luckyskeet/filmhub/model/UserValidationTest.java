@@ -1,7 +1,9 @@
 package ru.luckyskeet.filmhub.model;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -9,10 +11,11 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import java.time.LocalDate;
 import java.util.Set;
+import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-class UserValidationTest {
+public class UserValidationTest {
 
     private Validator validator;
 
@@ -22,30 +25,30 @@ class UserValidationTest {
         validator = factory.getValidator();
     }
 
-    @Test
-    public void shouldThrowIllegalArgumentExceptions() {
-        User userWithWrongEmail = new User()
-                .setLogin("thirdGay")
-                .setEmail("yyayayaya")
-                .setBirthday(LocalDate.of(2000, 1, 1));
+    private static Stream<User> provideInvalidUsers() {
+        return Stream.of(
+                new User() // Неправильный email
+                        .setLogin("thirdGay")
+                        .setEmail("yyayayaya")
+                        .setBirthday(LocalDate.of(2000, 1, 1)),
 
-        User userWithWrongBirthday = new User()
-                .setLogin("forthGay")
-                .setBirthday(LocalDate.now())
-                .setEmail("forthGay@ya.ru");
+                new User() // Неправильная дата рождения
+                        .setLogin("forthGay")
+                        .setBirthday(LocalDate.now()) // Нельзя использовать текущую дату
+                        .setEmail("forthGay@ya.ru"),
 
-        User userWithWrongLogin = new User()
-                .setLogin("firth Gay")
-                .setEmail("ohohoho@ya.ru")
-                .setBirthday(LocalDate.of(2000, 1, 1));
-
-        Set<ConstraintViolation<User>> violationsEmail = validator.validate(userWithWrongEmail);
-        assertFalse(violationsEmail.isEmpty());
-        Set<ConstraintViolation<User>> violationsBirthday = validator.validate(userWithWrongBirthday);
-        assertFalse(violationsBirthday.isEmpty());
-        Set<ConstraintViolation<User>> violationsLogin = validator.validate(userWithWrongLogin);
-        assertFalse(violationsLogin.isEmpty());
-
+                new User() // Неправильный логин (с пробелом)
+                        .setLogin("firth Gay")
+                        .setEmail("ohohoho@ya.ru")
+                        .setBirthday(LocalDate.of(2000, 1, 1))
+        );
     }
 
+    @ParameterizedTest
+    @MethodSource("provideInvalidUsers")
+    @DisplayName("Should throw validation exceptions for invalid users")
+    public void shouldThrowValidationExceptions(User invalidUser) {
+        Set<ConstraintViolation<User>> violations = validator.validate(invalidUser);
+        assertFalse(violations.isEmpty(), "User validation should fail for invalid user data");
+    }
 }
