@@ -1,4 +1,4 @@
-# Film-Hub
+# FilmHub
 #### a simple social network for movie fans
 
 - **Architecture:** Monolithic
